@@ -12,19 +12,16 @@ import React, {
 import SendWhiteIcon from "../icons/send-white.svg";
 import BrainIcon from "../icons/brain.svg";
 import RenameIcon from "../icons/rename.svg";
-import ExportIcon from "../icons/share.svg";
 import ReturnIcon from "../icons/return.svg";
+import ClearIcon from "../icons/clear.svg";
 import CopyIcon from "../icons/copy.svg";
 import SpeakIcon from "../icons/speak.svg";
 import SpeakStopIcon from "../icons/speak-stop.svg";
 import LoadingIcon from "../icons/three-dots.svg";
 import LoadingButtonIcon from "../icons/loading.svg";
-import PromptIcon from "../icons/prompt.svg";
-import MaskIcon from "../icons/mask.svg";
 import MaxIcon from "../icons/max.svg";
 import MinIcon from "../icons/min.svg";
 import ResetIcon from "../icons/reload.svg";
-import BreakIcon from "../icons/break.svg";
 import SettingsIcon from "../icons/chat-settings.svg";
 import DeleteIcon from "../icons/clear.svg";
 import PinIcon from "../icons/pin.svg";
@@ -34,17 +31,12 @@ import CloseIcon from "../icons/close.svg";
 import CancelIcon from "../icons/cancel.svg";
 import ImageIcon from "../icons/image.svg";
 
-import LightIcon from "../icons/light.svg";
-import DarkIcon from "../icons/dark.svg";
-import AutoIcon from "../icons/auto.svg";
 import BottomIcon from "../icons/bottom.svg";
 import StopIcon from "../icons/pause.svg";
 import RobotIcon from "../icons/robot.svg";
 import SizeIcon from "../icons/size.svg";
 import QualityIcon from "../icons/hd.svg";
 import StyleIcon from "../icons/palette.svg";
-import PluginIcon from "../icons/plugin.svg";
-import ShortcutkeyIcon from "../icons/shortcutkey.svg";
 import ReloadIcon from "../icons/reload.svg";
 
 import {
@@ -54,7 +46,6 @@ import {
   BOT_HELLO,
   createMessage,
   useAccessStore,
-  Theme,
   useAppConfig,
   DEFAULT_TOPIC,
   ModelType,
@@ -70,7 +61,6 @@ import {
   getMessageImages,
   isVisionModel,
   isDalle3,
-  showPlugins,
   safeLocalStorage,
 } from "../utils";
 
@@ -105,8 +95,7 @@ import {
   UNFINISHED_INPUT,
   ServiceProvider,
 } from "../constant";
-import { Avatar } from "./emoji";
-import { ContextPrompts, MaskAvatar, MaskConfig } from "./mask";
+import { ContextPrompts, MaskConfig } from "./mask";
 import { useMaskStore } from "../store/mask";
 import { ChatCommandPrefix, useChatCommand, useCommand } from "../command";
 import { prettyObject } from "../utils/format";
@@ -149,18 +138,6 @@ export function SessionConfigModel(props: { onClose: () => void }) {
                   (session) => (session.memoryPrompt = ""),
                 );
               }
-            }}
-          />,
-          <IconButton
-            key="copy"
-            icon={<CopyIcon />}
-            bordered
-            text={Locale.Chat.Config.SaveAs}
-            onClick={() => {
-              navigate(Path.Masks);
-              setTimeout(() => {
-                maskStore.create(session.mask);
-              }, 500);
             }}
           />,
         ]}
@@ -458,16 +435,6 @@ export function ChatActions(props: {
   const chatStore = useChatStore();
   const pluginStore = usePluginStore();
 
-  // switch themes
-  const theme = config.theme;
-  function nextTheme() {
-    const themes = [Theme.Auto, Theme.Light, Theme.Dark];
-    const themeIndex = themes.indexOf(theme);
-    const nextIndex = (themeIndex + 1) % themes.length;
-    const nextTheme = themes[nextIndex];
-    config.update((config) => (config.theme = nextTheme));
-  }
-
   // stop all responses
   const couldStop = ChatControllerPool.hasPending();
   const stopAll = () => ChatControllerPool.stopAll();
@@ -577,39 +544,10 @@ export function ChatActions(props: {
           icon={props.uploading ? <LoadingButtonIcon /> : <ImageIcon />}
         />
       )}
-      <ChatAction
-        onClick={nextTheme}
-        text={Locale.Chat.InputActions.Theme[theme]}
-        icon={
-          <>
-            {theme === Theme.Auto ? (
-              <AutoIcon />
-            ) : theme === Theme.Light ? (
-              <LightIcon />
-            ) : theme === Theme.Dark ? (
-              <DarkIcon />
-            ) : null}
-          </>
-        }
-      />
-
-      <ChatAction
-        onClick={props.showPromptHints}
-        text={Locale.Chat.InputActions.Prompt}
-        icon={<PromptIcon />}
-      />
-
-      <ChatAction
-        onClick={() => {
-          navigate(Path.Masks);
-        }}
-        text={Locale.Chat.InputActions.Masks}
-        icon={<MaskIcon />}
-      />
 
       <ChatAction
         text={Locale.Chat.InputActions.Clear}
-        icon={<BreakIcon />}
+        icon={<ClearIcon />}
         onClick={() => {
           chatStore.updateCurrentSession((session) => {
             if (session.clearContextIndex === session.messages.length) {
@@ -740,44 +678,6 @@ export function ChatActions(props: {
             });
             showToast(style);
           }}
-        />
-      )}
-
-      {showPlugins(currentProviderName, currentModel) && (
-        <ChatAction
-          onClick={() => {
-            if (pluginStore.getAll().length == 0) {
-              navigate(Path.Plugins);
-            } else {
-              setShowPluginSelector(true);
-            }
-          }}
-          text={Locale.Plugin.Name}
-          icon={<PluginIcon />}
-        />
-      )}
-      {showPluginSelector && (
-        <Selector
-          multiple
-          defaultSelectedValue={chatStore.currentSession().mask?.plugin}
-          items={pluginStore.getAll().map((item) => ({
-            title: `${item?.title}@${item?.version}`,
-            value: item?.id,
-          }))}
-          onClose={() => setShowPluginSelector(false)}
-          onSelection={(s) => {
-            chatStore.updateCurrentSession((session) => {
-              session.mask.plugin = s as string[];
-            });
-          }}
-        />
-      )}
-
-      {!isMobileScreen && (
-        <ChatAction
-          onClick={() => props.setShowShortcutKeyModal(true)}
-          text={Locale.Chat.ShortcutKey.Title}
-          icon={<ShortcutkeyIcon />}
         />
       )}
     </div>
@@ -1619,16 +1519,6 @@ function _Chat() {
               />
             </div>
           )}
-          <div className="window-action-button">
-            <IconButton
-              icon={<ExportIcon />}
-              bordered
-              title={Locale.Chat.Actions.Export}
-              onClick={() => {
-                setShowExport(true);
-              }}
-            />
-          </div>
           {showMaxIcon && (
             <div className="window-action-button">
               <IconButton
@@ -1719,28 +1609,7 @@ function _Chat() {
                           }}
                         ></IconButton>
                       </div>
-                      {isUser ? (
-                        <Avatar avatar={config.avatar} />
-                      ) : (
-                        <>
-                          {["system"].includes(message.role) ? (
-                            <Avatar avatar="2699-fe0f" />
-                          ) : (
-                            <MaskAvatar
-                              avatar={session.mask.avatar}
-                              model={
-                                message.model || session.mask.modelConfig.model
-                              }
-                            />
-                          )}
-                        </>
-                      )}
                     </div>
-                    {!isUser && (
-                      <div className={styles["chat-model-name"]}>
-                        {message.model}
-                      </div>
-                    )}
 
                     {showActions && (
                       <div className={styles["chat-message-actions"]}>

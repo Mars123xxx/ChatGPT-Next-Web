@@ -13,7 +13,6 @@ import FireIcon from "../icons/fire.svg";
 import EyeIcon from "../icons/eye.svg";
 import DownloadIcon from "../icons/download.svg";
 import UploadIcon from "../icons/upload.svg";
-import ConfigIcon from "../icons/config.svg";
 import ConfirmIcon from "../icons/confirm.svg";
 
 import ConnectionIcon from "../icons/connection.svg";
@@ -26,10 +25,8 @@ import {
   ListItem,
   Modal,
   PasswordInput,
-  Popover,
   Select,
   showConfirm,
-  showToast,
 } from "./ui-lib";
 import { ModelConfigList } from "./model-config";
 
@@ -66,7 +63,6 @@ import {
   RELEASE_URL,
   STORAGE_KEY,
   ServiceProvider,
-  SlotID,
   UPDATE_URL,
   Stability,
   Iflytek,
@@ -76,7 +72,6 @@ import { Prompt, SearchService, usePromptStore } from "../store/prompt";
 import { ErrorBoundary } from "./error";
 import { InputRange } from "./input-range";
 import { useNavigate } from "react-router-dom";
-import { Avatar, AvatarPicker } from "./emoji";
 import { getClientConfig } from "../config/client";
 import { useSyncStore } from "../store/sync";
 import { nanoid } from "nanoid";
@@ -506,43 +501,6 @@ function SyncItems() {
   return (
     <>
       <List>
-        <ListItem
-          title={Locale.Settings.Sync.CloudState}
-          subTitle={
-            syncStore.lastProvider
-              ? `${new Date(syncStore.lastSyncTime).toLocaleString()} [${
-                  syncStore.lastProvider
-                }]`
-              : Locale.Settings.Sync.NotSyncYet
-          }
-        >
-          <div style={{ display: "flex" }}>
-            <IconButton
-              aria={Locale.Settings.Sync.CloudState + Locale.UI.Config}
-              icon={<ConfigIcon />}
-              text={Locale.UI.Config}
-              onClick={() => {
-                setShowSyncConfigModal(true);
-              }}
-            />
-            {couldSync && (
-              <IconButton
-                icon={<ResetIcon />}
-                text={Locale.UI.Sync}
-                onClick={async () => {
-                  try {
-                    await syncStore.sync();
-                    showToast(Locale.Settings.Sync.Success);
-                  } catch (e) {
-                    showToast(Locale.Settings.Sync.Fail);
-                    console.error("[Sync]", e);
-                  }
-                }}
-              />
-            )}
-          </div>
-        </ListItem>
-
         <ListItem
           title={Locale.Settings.Sync.LocalState}
           subTitle={Locale.Settings.Sync.Overview(stateOverview)}
@@ -1318,32 +1276,6 @@ export function Settings() {
       </div>
       <div className={styles["settings"]}>
         <List>
-          <ListItem title={Locale.Settings.Avatar}>
-            <Popover
-              onClose={() => setShowEmojiPicker(false)}
-              content={
-                <AvatarPicker
-                  onEmojiClick={(avatar: string) => {
-                    updateConfig((config) => (config.avatar = avatar));
-                    setShowEmojiPicker(false);
-                  }}
-                />
-              }
-              open={showEmojiPicker}
-            >
-              <div
-                aria-label={Locale.Settings.Avatar}
-                tabIndex={0}
-                className={styles.avatar}
-                onClick={() => {
-                  setShowEmojiPicker(!showEmojiPicker);
-                }}
-              >
-                <Avatar avatar={config.avatar} />
-              </div>
-            </Popover>
-          </ListItem>
-
           <ListItem
             title={Locale.Settings.Update.Version(currentVersion ?? "unknown")}
             subTitle={
@@ -1512,170 +1444,6 @@ export function Settings() {
         </List>
 
         <SyncItems />
-
-        <List>
-          <ListItem
-            title={Locale.Settings.Mask.Splash.Title}
-            subTitle={Locale.Settings.Mask.Splash.SubTitle}
-          >
-            <input
-              aria-label={Locale.Settings.Mask.Splash.Title}
-              type="checkbox"
-              checked={!config.dontShowMaskSplashScreen}
-              onChange={(e) =>
-                updateConfig(
-                  (config) =>
-                    (config.dontShowMaskSplashScreen =
-                      !e.currentTarget.checked),
-                )
-              }
-            ></input>
-          </ListItem>
-
-          <ListItem
-            title={Locale.Settings.Mask.Builtin.Title}
-            subTitle={Locale.Settings.Mask.Builtin.SubTitle}
-          >
-            <input
-              aria-label={Locale.Settings.Mask.Builtin.Title}
-              type="checkbox"
-              checked={config.hideBuiltinMasks}
-              onChange={(e) =>
-                updateConfig(
-                  (config) =>
-                    (config.hideBuiltinMasks = e.currentTarget.checked),
-                )
-              }
-            ></input>
-          </ListItem>
-        </List>
-
-        <List>
-          <ListItem
-            title={Locale.Settings.Prompt.Disable.Title}
-            subTitle={Locale.Settings.Prompt.Disable.SubTitle}
-          >
-            <input
-              aria-label={Locale.Settings.Prompt.Disable.Title}
-              type="checkbox"
-              checked={config.disablePromptHint}
-              onChange={(e) =>
-                updateConfig(
-                  (config) =>
-                    (config.disablePromptHint = e.currentTarget.checked),
-                )
-              }
-            ></input>
-          </ListItem>
-
-          <ListItem
-            title={Locale.Settings.Prompt.List}
-            subTitle={Locale.Settings.Prompt.ListCount(
-              builtinCount,
-              customCount,
-            )}
-          >
-            <IconButton
-              aria={Locale.Settings.Prompt.List + Locale.Settings.Prompt.Edit}
-              icon={<EditIcon />}
-              text={Locale.Settings.Prompt.Edit}
-              onClick={() => setShowPromptModal(true)}
-            />
-          </ListItem>
-        </List>
-
-        <List id={SlotID.CustomModel}>
-          {saasStartComponent}
-          {accessCodeComponent}
-
-          {!accessStore.hideUserApiKey && (
-            <>
-              {useCustomConfigComponent}
-
-              {accessStore.useCustomConfig && (
-                <>
-                  <ListItem
-                    title={Locale.Settings.Access.Provider.Title}
-                    subTitle={Locale.Settings.Access.Provider.SubTitle}
-                  >
-                    <Select
-                      aria-label={Locale.Settings.Access.Provider.Title}
-                      value={accessStore.provider}
-                      onChange={(e) => {
-                        accessStore.update(
-                          (access) =>
-                            (access.provider = e.target
-                              .value as ServiceProvider),
-                        );
-                      }}
-                    >
-                      {Object.entries(ServiceProvider).map(([k, v]) => (
-                        <option value={v} key={k}>
-                          {k}
-                        </option>
-                      ))}
-                    </Select>
-                  </ListItem>
-
-                  {openAIConfigComponent}
-                  {azureConfigComponent}
-                  {googleConfigComponent}
-                  {anthropicConfigComponent}
-                  {baiduConfigComponent}
-                  {byteDanceConfigComponent}
-                  {alibabaConfigComponent}
-                  {tencentConfigComponent}
-                  {moonshotConfigComponent}
-                  {stabilityConfigComponent}
-                  {lflytekConfigComponent}
-                </>
-              )}
-            </>
-          )}
-
-          {!shouldHideBalanceQuery && !clientConfig?.isApp ? (
-            <ListItem
-              title={Locale.Settings.Usage.Title}
-              subTitle={
-                showUsage
-                  ? loadingUsage
-                    ? Locale.Settings.Usage.IsChecking
-                    : Locale.Settings.Usage.SubTitle(
-                        usage?.used ?? "[?]",
-                        usage?.subscription ?? "[?]",
-                      )
-                  : Locale.Settings.Usage.NoAccess
-              }
-            >
-              {!showUsage || loadingUsage ? (
-                <div />
-              ) : (
-                <IconButton
-                  icon={<ResetIcon></ResetIcon>}
-                  text={Locale.Settings.Usage.Check}
-                  onClick={() => checkUsage(true)}
-                />
-              )}
-            </ListItem>
-          ) : null}
-
-          <ListItem
-            title={Locale.Settings.Access.CustomModel.Title}
-            subTitle={Locale.Settings.Access.CustomModel.SubTitle}
-          >
-            <input
-              aria-label={Locale.Settings.Access.CustomModel.Title}
-              type="text"
-              value={config.customModels}
-              placeholder="model1,model2,model3"
-              onChange={(e) =>
-                config.update(
-                  (config) => (config.customModels = e.currentTarget.value),
-                )
-              }
-            ></input>
-          </ListItem>
-        </List>
 
         <List>
           <ModelConfigList

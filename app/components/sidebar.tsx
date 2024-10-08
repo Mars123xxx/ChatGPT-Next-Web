@@ -4,17 +4,14 @@ import styles from "./home.module.scss";
 
 import { IconButton } from "./button";
 import SettingsIcon from "../icons/settings.svg";
-import GithubIcon from "../icons/github.svg";
 import ChatGptIcon from "../icons/chatgpt.svg";
 import AddIcon from "../icons/add.svg";
 import DeleteIcon from "../icons/delete.svg";
-import MaskIcon from "../icons/mask.svg";
 import DragIcon from "../icons/drag.svg";
-import DiscoveryIcon from "../icons/discovery.svg";
 
 import Locale from "../locales";
 
-import { useAppConfig, useChatStore } from "../store";
+import { Theme, useAppConfig, useChatStore } from "../store";
 
 import {
   DEFAULT_SIDEBAR_WIDTH,
@@ -23,13 +20,15 @@ import {
   NARROW_SIDEBAR_WIDTH,
   Path,
   PLUGINS,
-  REPO_URL,
 } from "../constant";
 
 import { Link, useNavigate } from "react-router-dom";
 import { isIOS, useMobileScreen } from "../utils";
 import dynamic from "next/dynamic";
 import { showConfirm, Selector } from "./ui-lib";
+import AutoIcon from "@/app/icons/auto.svg";
+import LightIcon from "@/app/icons/light.svg";
+import DarkIcon from "@/app/icons/dark.svg";
 
 const ChatList = dynamic(async () => (await import("./chat-list")).ChatList, {
   loading: () => null,
@@ -217,6 +216,16 @@ export function SideBar(props: { className?: string }) {
   const config = useAppConfig();
   const chatStore = useChatStore();
 
+  // switch themes
+  const theme = config.theme;
+  function nextTheme() {
+    const themes = [Theme.Auto, Theme.Light, Theme.Dark];
+    const themeIndex = themes.indexOf(theme);
+    const nextIndex = (themeIndex + 1) % themes.length;
+    const nextTheme = themes[nextIndex];
+    config.update((config) => (config.theme = nextTheme));
+  }
+
   return (
     <SideBarContainer
       onDragStart={onDragStart}
@@ -224,32 +233,10 @@ export function SideBar(props: { className?: string }) {
       {...props}
     >
       <SideBarHeader
-        title="NextChat"
-        subTitle="Build your own AI assistant."
+        title="X-Chat"
+        subTitle="个人AI助手"
         logo={<ChatGptIcon />}
       >
-        <div className={styles["sidebar-header-bar"]}>
-          <IconButton
-            icon={<MaskIcon />}
-            text={shouldNarrow ? undefined : Locale.Mask.Name}
-            className={styles["sidebar-bar-button"]}
-            onClick={() => {
-              if (config.dontShowMaskSplashScreen !== true) {
-                navigate(Path.NewChat, { state: { fromHome: true } });
-              } else {
-                navigate(Path.Masks, { state: { fromHome: true } });
-              }
-            }}
-            shadow
-          />
-          <IconButton
-            icon={<DiscoveryIcon />}
-            text={shouldNarrow ? undefined : Locale.Discovery.Name}
-            className={styles["sidebar-bar-button"]}
-            onClick={() => setShowPluginSelector(true)}
-            shadow
-          />
-        </div>
         {showPluginSelector && (
           <Selector
             items={[
@@ -299,13 +286,21 @@ export function SideBar(props: { className?: string }) {
               </Link>
             </div>
             <div className={styles["sidebar-action"]}>
-              <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
-                <IconButton
-                  aria={Locale.Export.MessageFromChatGPT}
-                  icon={<GithubIcon />}
-                  shadow
-                />
-              </a>
+              <IconButton
+                onClick={nextTheme}
+                text={Locale.Chat.InputActions.Theme[theme]}
+                icon={
+                  <>
+                    {theme === Theme.Auto ? (
+                      <AutoIcon />
+                    ) : theme === Theme.Light ? (
+                      <LightIcon />
+                    ) : theme === Theme.Dark ? (
+                      <DarkIcon />
+                    ) : null}
+                  </>
+                }
+              />
             </div>
           </>
         }
@@ -314,12 +309,8 @@ export function SideBar(props: { className?: string }) {
             icon={<AddIcon />}
             text={shouldNarrow ? undefined : Locale.Home.NewChat}
             onClick={() => {
-              if (config.dontShowMaskSplashScreen) {
-                chatStore.newSession();
-                navigate(Path.Chat);
-              } else {
-                navigate(Path.NewChat);
-              }
+              chatStore.newSession();
+              navigate(Path.Chat);
             }}
             shadow
           />

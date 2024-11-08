@@ -534,7 +534,8 @@ const cn = {
   },
   Store: {
     DefaultTopic: "新的聊天",
-    BotHello: "有什么可以帮你的吗",
+    BotHello:
+      "您好，我是您的创意营销设计助手，将辅助您完成产品营销设计。您可以向我提出任何产品营销设计方面的问题。",
     Error: "出错了，稍后重试吧",
     Prompt: {
       History: (content: string) => "这是历史聊天总结作为前情提要：" + content,
